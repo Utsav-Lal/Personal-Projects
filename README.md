@@ -1,2 +1,2 @@
 # Public_Stuff
-Things i've made in workable order
+Some of the things I made that are at least slightly in presentable order.
