@@ -69,6 +69,13 @@ for i in notesdict:
     chorddict[i] = iden(notesdict[i])
     newlist = []
     if chorddict[i] is not None:
+
+        # If the previous notes still fit have a high chance of making them longer
+        for k in prevlist:
+            if k not in newlist and k[0] % 12 in chorddict[i] and random.randint(1, 4) > 1:
+                k[2] += timestep
+                newlist.append(k)
+
         # Creates new notes
         for y in range(0, 5):
             # Generates pitch out of allowed notes in chord - makes notes closer to the notes in the original music
@@ -78,29 +85,30 @@ for i in notesdict:
             if pitch % 12 != example % 12:
                 pitch = (random.choice(chorddict[i])+int(np.random.normal(0, 0.001))*12+center) % 120
 
-            # Checks if note was there in the previous step
-            inthing = False
-            place = None
-            for j in prevlist:
+            # Makes sure note has not already been added
+            placed = False
+            for j in newlist:
                 if j[0] == pitch:
-                    inthing = True
-                    place = j
+                    placed = True
                     break
+            if not placed:
+                # Checks if note was there in the previous step
+                inthing = False
+                place = None
+                for j in prevlist:
+                    if j[0] == pitch:
+                        inthing = True
+                        place = j
+                        break
 
-            # if it is not there, it is repeated, and it is also repeated by a small chance if it is
-            if not inthing or random.randint(0, 100) > 80:
-                newnote = [pitch, i*timestep, timestep]
-                outnotelist.append(newnote)
-                newlist.append(newnote)
-            else:  # extend the previous notes
-                place[2] += timestep
-                newlist.append(place)
-
-        # If the previous notes still fit have a high chance of making them longer
-        for k in prevlist:
-            if k not in newlist and k[0] % 12 in chorddict[i] and random.randint(1, 4) > 1:
-                k[2] += timestep
-                newlist.append(k)
+                # if it is not there, it is repeated, and it is also repeated by a small chance if it is
+                if not inthing or random.randint(0, 100) > 80:
+                    newnote = [pitch, i*timestep, timestep]
+                    outnotelist.append(newnote)
+                    newlist.append(newnote)
+                else:  # extend the previous notes
+                    place[2] += timestep
+                    newlist.append(place)
         
     prevlist = newlist
 
