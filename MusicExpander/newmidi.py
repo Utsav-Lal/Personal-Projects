@@ -100,6 +100,7 @@ for i in notesdict:
         for k in prevlist:
             if k not in newlist and k[0] % 12 in chorddict[i] and random.randint(1, 4) > 1:
                 k[2] += timestep
+                newlist.append(k)
         
     prevlist = newlist
 
