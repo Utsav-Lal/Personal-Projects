@@ -1,3 +1,5 @@
+# Identifies the chord based on the pitches of the notes given
+
 def iden(notelst):
     major = [0, 4, 7]
     minor = [0, 3, 7]
