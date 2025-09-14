@@ -18,11 +18,5 @@ def initstate(x, y):  # set initial values of unseen state variables
     newx, newy = linscale(x, y)
     return [newx, newy, 0]
 
-def repcolor(val):  # coloring scheme for chaossystem
-    if val[0] > 0.5:
-        return "black"
-    else:
-        return "white"
-
 def firststate():  # first state for attractor
     return [1, 1, 1]
