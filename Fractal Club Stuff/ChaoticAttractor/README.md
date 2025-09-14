@@ -1,0 +1,1 @@
+This allows for the visualization of chaotic attractors. path.py draws the attractor, while rule.py allows the user to set the chaotic attractor rule, which variables are displayed, and the scaling of those variables, among other things.
