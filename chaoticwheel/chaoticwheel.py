@@ -11,18 +11,21 @@ w = 800
 h = 800
 canvas = Canvas(tk, width=w, height=h)
 canvas.pack()
+
 timestep = 0.01
-gravstrength = 0.1/timestep*8
+gravstrength = 0.1/timestep*8 # strength of gravity
+spokes = 60 # number of spokes
+basetilt=0.3 # initial angular offset
 
-enddict = {}
-pointlist = []
+pointlist = [] # stores the points that draw out the strange attractor
 
-currpos = canvas.create_oval(0, 0, 2, 2, fill='red', outline='red')
-co6 = 36
-spx=0
-spy=-175
-spy2=90
-class carrier:
+currpos = canvas.create_oval(0, 0, 2, 2, fill='red', outline='red') # dot that indicates the current position in the attractor
+
+spx=0 # x-position of the wheel
+spy=-175 # y-position of the wheel
+spy2=90 # y-offset of the attractor drawing
+
+class carrier: # stores information of and helps simulate the water carrier
     mass = 3  # water mass
     maxful = 200
     def __init__(self, dist, rad, invisible=False):
@@ -30,26 +33,26 @@ class carrier:
         self.rad = rad
         self.full = 0
         self.invisible = invisible
-        if not self.invisible:
+        if not self.invisible: # draws the carrier and spoke
             self.sphere = canvas.create_oval(math.cos(self.rad)*self.dist+self.full+w/2+spx, math.sin(self.rad)*self.dist+self.full+h/2+spy, math.cos(self.rad)*self.dist-self.full+w/2+spx, math.sin(self.rad)*self.dist-self.full+h/2+spy)
             self.rod = canvas.create_line(w/2+spx, h/2+spy, math.cos(self.rad)*self.dist+w/2+spx, math.sin(self.rad)*self.dist+h/2+spy)
 
-    def rotate(self, speed):
+    def rotate(self, speed):  # rotates the carrier by the speed of the rotation
         self.rad += speed*timestep
         if not self.invisible:
             canvas.coords(self.sphere, math.cos(self.rad)*self.dist+self.full+w/2+spx, math.sin(self.rad)*self.dist+self.full+h/2+spy, math.cos(self.rad)*self.dist-self.full+w/2+spx, math.sin(self.rad)*self.dist-self.full+h/2+spy)
             canvas.coords(self.rod, w/2+spx, h/2+spy, math.cos(self.rad)*self.dist+w/2+spx, math.sin(self.rad)*self.dist+h/2+spy)
 
-    def torquemass(self):  # torque, inertia
+    def torquemass(self):  # returns the torque applied, inertia of the carrier
         return (carrier.mass*self.full*gravstrength*math.cos(self.rad)*self.dist, carrier.mass*self.full*self.dist**2)
 
-class wheel:
-    threshold = 1
-    fillspeed = 5
-    emptyspeed = 0.25/3
-    basemass = 0
-    time = 0
-    friction=15/timestep*75
+class wheel:  # handles the wheel
+    threshold = 1  # indicates how far from the top a carrier can be to get filled
+    fillspeed = 5  # controls how fast water flows in
+    emptyspeed = 0.25/3  # controls how fast water empties
+    basemass = 0.1  # dry mass of the wheel
+    time = 0  # counts time - used for drawing the attractor
+    friction=15/timestep*75  # friction of the wheel
     def __init__(self, size, spokes, tilt, fillspeed, emptyspeed, invisible=False):
         self.size = size
         self.spokes = spokes
@@ -57,20 +60,22 @@ class wheel:
         self.tilt = tilt
         self.fillspeed = fillspeed
         self.emptyspeed = emptyspeed
-        for i in range(self.spokes):
+
+        for i in range(self.spokes):  # creates the carriers
             self.carrierlist.append(carrier(self.size, 2*i*math.pi/self.spokes+self.tilt+math.pi/2, invisible))
-        self.vel = 10
+
+        self.vel = 10  # initial velocity
         self.tiltchange = self.tilt
         self.invisible = invisible
         self.threshold=math.pi/self.spokes*wheel.threshold
 
     @classmethod
-    def timeupdate(cls):
+    def timeupdate(cls):  # updates time
         wheel.time += 1
         canvas.after(int(timestep*100), wheel.timeupdate)
 
 
-    def run(self):
+    def run(self):  # runs the wheel
         spokechange = (self.spokes/10)
         totalamomentum = wheel.basemass*self.vel
         totaltorque = 0
@@ -79,170 +84,88 @@ class wheel:
         totaly = 0
         totalx = 0
         for i in self.carrierlist:
-            # collect current information
+            # measures angular momentum
             n = i.torquemass()
             totalamomentum += self.vel*n[1]
 
+            # fills carriers
             if abs(i.rad%(2*math.pi)-(3*math.pi/2)) <= self.threshold:  # fill
                 maxamount = carrier.maxful-i.full
-                dropmomentum = (2*(self.size-self.size*math.sin(i.rad))*gravstrength)**0.5*min(maxamount, self.fillspeed*timestep)*carrier.mass
-                sidemomentum = -dropmomentum*math.sin(i.rad-math.pi/2)
-                amomentum = sidemomentum*self.size
-                amomentum=0
-                totalamomentum += amomentum
-                
                 i.full += min(maxamount, self.fillspeed * timestep)
 
-            # empty
+            # empty carriers and measure momentum change
             totalamomentum -= self.vel*(i.full-max(i.full-self.emptyspeed*i.full*timestep, 0))*carrier.mass*self.size**2
             i.full = max(i.full-self.emptyspeed*i.full*timestep, 0)
 
-            # get new information
+            # get new inertia and torque
             m = i.torquemass()
             inertia += m[1]
             totaltorque += m[0]*timestep
 
+            # measure mass and COM
             totalmass += carrier.mass*i.full
             totaly += carrier.mass*i.full*i.dist*math.sin(i.rad)
             totalx += carrier.mass*i.full*i.dist*math.cos(i.rad)
 
 
-        # fix velocity
+        # update velocity
         self.vel = totalamomentum/inertia
 
         # apply torque
         self.vel += (totaltorque-self.vel*wheel.friction*spokechange*timestep)/inertia
+
+        # rotate wheel
         for i in self.carrierlist:
             i.rotate(self.vel)
+
+        # gets the coordinates of the state in the attractor
         comy = totaly/totalmass
         comx = totalx/totalmass
         comx = comx*5+w/2
         comy=comy*4+h/2
         comvel=self.vel*400+h/2
+
+        # color is used for the third dimension
         colorx = "#"+3*format(math.floor(((totalx/totalmass*0.5+self.size))*128/self.size), '02x')
         colory = "#"+3*format(math.floor(((totaly/totalmass*0.5+self.size))*128/self.size),'02x')
         colorvel = "#"+3*format(math.floor(self.vel*60+120),'02x')
-        colort = colory
-        #print(colort)
-        #print(color)
-        if wheel.time % 50 == 0:
-            #canvas.create_oval((wheel.time/80), (self.tiltchange/10+200), (wheel.time/80)+1, (self.tiltchange/10+200) + 1)
-            if wheel.time == 10000 or True:
-                #print(self.tiltchange)
-                #print(1)
-                if True:
-                    #print(self.vel)
-                    if len(pointlist) != 0:
-                        #canvas.create_line(pointlist[-1][0], pointlist[-1][1], (inertia/4000), (self.vel*200+h/2))
-                        canvas.create_line(pointlist[-1][0], pointlist[-1][1], comvel-spx, h-comy+spy2, fill=colorx)
-                    #canvas.create_oval((inertia/8000)%400, (self.vel*100+200) % 400, (inertia/8000)%400+1, (self.vel*100+200) % 400 + 1)
-                    #pointlist.append(((inertia/4000), (self.vel*200+h/2)))
-                    pointlist.append((comvel-spx, h-comy+spy2))
-                    canvas.coords(currpos, pointlist[-1][0]-1, pointlist[-1][1]-1, pointlist[-1][0]+1, pointlist[-1][1]+1)
-                    canvas.tag_raise(currpos)
-        self.tiltchange += self.vel
+        
+        colort = colory  # the y-position is the third dimension
+
+        # draws the attractor
+        if wheel.time % 50 == 0:  # only does it every 50 steps to reduce lag
+            if len(pointlist) != 0:  # creates line to previous state
+                canvas.create_line(pointlist[-1][0], pointlist[-1][1], comvel-spx, h-comy+spy2, fill=colorx)
+            pointlist.append((comvel-spx, h-comy+spy2))  # adds new state to path
+            canvas.coords(currpos, pointlist[-1][0]-1, pointlist[-1][1]-1, pointlist[-1][0]+1, pointlist[-1][1]+1)  # repositions state marker
+            canvas.tag_raise(currpos)
+
+        self.tiltchange += self.vel # records angular position
 
         if not self.invisible or False:
             canvas.after(int(100*timestep), self.run) 
 
 
-
-    # def run(self):
-    #     totaltorque = 0
-    #     inertia = wheel.basemass
-    #     newinertia = wheel.basemass
-    #     amountin = 0
-    #     avel = 0
-    #     for i in self.carrierlist:
-    #         n = i.torquemass()
-    #         inertia += n[1]
-    #         if abs(i.rad%(2*math.pi)-(3*math.pi/2)) <= wheel.threshold:
-    #             i.full += wheel.fillspeed*timestep
-    #             #k = i.full
-    #             #i.full = min(i.full+wheel.fillspeed*timestep, carrier.maxful)
-    #             amountin += i.full*carrier.mass
-    #         i.full = max(i.full-wheel.emptyspeed*timestep, 0)
-    #         m = i.torquemass()
-    #         totaltorque += m[0]
-    #         newinertia += m[1]
-
-    #     if inertia != 0:
-    #         avel = inertia*self.vel
-    #         self.vel = avel/(inertia+amountin*self.size**2)
-    #         self.vel += totaltorque/(newinertia)
-    #         #self.vel *= 0.9999
-    #     for i in self.carrierlist:
-    #         i.rotate(self.vel)
-    #     canvas.after(int(100*timestep), self.run)
-
+# creates wheels - only one is created but there is code for more at the same time to show divergence
 tiltshift = 0.003
-tiltshift = 0
 fillshift = 0.0001
 times = 1
 plots = 5
-basetilt=0.153
-basetilt=0.153
-basetilt=0.3
 
 wheellist = []
-import matplotlib.pyplot as plt
-#for i in range(times-1,0-1,-1):
+
 for i in range(1, 2):
     for j in range(times-1, 0-1,-1):
-        k=wheel(100, 60, basetilt+j*tiltshift*10/times, wheel.fillspeed+i*fillshift*10/times, wheel.emptyspeed, invisible=False)
+        k=wheel(100, spokes, basetilt+j*tiltshift*10/times, wheel.fillspeed+i*fillshift*10/times, wheel.emptyspeed, invisible=False)
         wheellist.append(k)
         k.run()
-        if False:
-            wheel.time = 0
-            for x in range(0, 10001):
-                k.run()
-                wheel.timeupdate()
-            if k.tiltchange <= 1100:
-                plt.scatter(i*tiltshift*10/times, j*fillshift*10/times)
-            plt.pause(0.01)
 
-# for x in range(0, 200000):
-#     wheellist[0].run()
-
-
-print(len(wheellist))
-
-def runfunc():
-
-    # if wheel.time == 20000:
-        
-    #     for i in range(len(wheellist)):
-    #         enddict[(i//times, i%times)] = wheellist[i].vel
-    #     for i in range(times):
-    #         for j in range(times):
-    #             k = enddict[(i, j)]
-    #             #print(k)
-    #             color = None
-    #             if k <= 0:
-    #                 color = "red"
-    #                 #plt.scatter(i, j)
-    #             else:
-    #                 color = "white"
-    #             canvas.create_oval(i, j, i, j, fill=color, outline=color)
-    #     plt.show()
-    #     return
+def runfunc():  # runs wheels
     for i in wheellist:
         i.run()
-    #wheel.timeupdate()
-    #canvas.after(int(timestep*100), runfunc)
-    #runfunc()
     canvas.after(1, runfunc)
 
 wheel.timeupdate()
 tk.mainloop()
-if False:
-    for x in range(0, 20001):
-        runfunc()
-        if x % 100 == 0 and True:
-            print(x)
-        #print(x)
-        tk.update()
-        time.sleep(0.01)
-#plt.show()
 
 
