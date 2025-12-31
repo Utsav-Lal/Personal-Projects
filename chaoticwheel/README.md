@@ -1,6 +1,6 @@
 Made in Spring 2024.
 
-Run this project in python with tkinter installed.
+Run chaoticwheel.py in python with tkinter installed.
 
 This project demonstrates the relationship between the chaotic waterwheel and the Lorentz attractor, which is drawn according to the wheel's state: x is velocity, y is height of COM, color is the horizontal position of COM.
 
