@@ -22,10 +22,10 @@ midi_data = pretty_midi.PrettyMIDI(file)
 for instrument in midi_data.instruments:
     for note in instrument.notes:
         notes.append((note.pitch, note.start, note.end))
-
+times, tempi = midi_data.get_tempo_changes()
 
 # Timestep - how small the new notes can be
-timestep = 0.125
+timestep = 0.03125
 
 
 
@@ -35,7 +35,7 @@ track = 0
 
 time = 0
 mf.addTrackName(track, time, "crazytrack")
-mf.addTempo(track, time, 120)
+mf.addTempo(track, time, 100)
 
 channel = 0
 volume = 100
@@ -59,7 +59,6 @@ for i in notes:
     for x in range(math.ceil(i[1]/timestep), math.floor(i[2]/timestep)):
         notesdict[x].append(i[0])
 
-
 # Expands the song by adding new notes within the chords of the time intervals
 outnotelist = []
 prevlist = []
@@ -82,7 +81,7 @@ for i in notesdict:
             example = random.choice(notesdict[i])
             center = (example//12)*12
             pitch = (random.choice(chorddict[i])+int(np.random.normal(0, 0.001))*12+center) % 120
-            if pitch % 12 != example % 12:
+            if pitch % 12 != example % 12:  # makes it more likely that a note placed is in the same pitch class as the example
                 pitch = (random.choice(chorddict[i])+int(np.random.normal(0, 0.001))*12+center) % 120
 
             # Makes sure note has not already been added
