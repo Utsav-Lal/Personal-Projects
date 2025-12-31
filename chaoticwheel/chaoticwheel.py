@@ -94,7 +94,8 @@ class wheel:  # handles the wheel
                 i.full += min(maxamount, self.fillspeed * timestep)
 
             # empty carriers and measure momentum change
-            totalamomentum -= self.vel*(i.full-max(i.full-self.emptyspeed*i.full*timestep, 0))*carrier.mass*self.size**2
+            emptyforce = (((gravstrength+math.sin(i.rad))**2+math.cos(i.rad)**2)**0.5*i.dist*self.vel**2)/10**4 # calculates the ejecting force of the water based on gravity and centripetal acceleration
+            totalamomentum -= self.vel*(i.full-max(i.full-self.emptyspeed*i.full*timestep*emptyforce, 0))*carrier.mass*self.size**2
             i.full = max(i.full-self.emptyspeed*i.full*timestep, 0)
 
             # get new inertia and torque
