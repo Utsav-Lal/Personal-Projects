@@ -6,4 +6,4 @@ This project demonstrates the relationship between the chaotic waterwheel and th
 
 Water is added to the bucket at the top of the wheel, while draining out from all the others. The size of the bucket is how full it is.
 
-More Info: [https://docs.google.com/document/d/13BTZ55ISCmsmPFFfV9U6cpc5jN3mKuQDEc-tRgGnLdE/edit?usp=sharing](url)
+More Info: [https://drive.google.com/file/d/1cYrDE0c4wCJD4cVV4DZrsOv7tFsoFzOA/view?usp=sharing](url)
